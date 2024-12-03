@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background: #0c0d10;
+  color: white;
+}
+
+/* Override wallet adapter button styles */
+.wallet-adapter-button {
+  background: linear-gradient(to right, #9945FF, #14F195) !important;
+  color: white !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: 0.5rem !important;
+  font-weight: 500 !important;
+  width: 100% !important;
+  height: auto !important;
+  transition: all 0.2s !important;
+}
+
+.wallet-adapter-button:not(:disabled):hover {
+  opacity: 0.9 !important;
+  transform: translateY(-1px) !important;
+}
+
+.wallet-adapter-modal-wrapper {
+  background: rgba(26, 27, 35, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.wallet-adapter-modal-button-close {
+  background: #9945FF !important;
+}
+
+.wallet-adapter-modal-title {
+  color: white !important;
+}
+
+.wallet-adapter-modal-content {
+  color: #a0aec0 !important;
+}
+
+.wallet-adapter-modal-list {
+  margin: 0 !important;
+}
+
+/* Updated toast styles */
+.Toaster > div {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* Toast animations */
+@keyframes toastEnter {
+  0% {
+    transform: translateY(1rem);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toastLeave {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(1rem);
+    opacity: 0;
+  }
+}
+
+.animate-enter {
+  animation: toastEnter 0.2s ease-out;
+}
+
+.animate-leave {
+  animation: toastLeave 0.2s ease-in forwards;
+}
+
+/* Mobile-friendly toast styles */
+@media (max-width: 640px) {
+  .Toaster > div {
+    margin: 0.5rem !important;
+    width: calc(100% - 1rem) !important;
+    max-width: none !important;
+  }
+}
+
+/* Smooth animations for mobile */
+.wallet-adapter-modal-wrapper {
+  animation: modalFade 0.2s ease-out !important;
+}
+
+@keyframes modalFade {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Reduce motion on mobile */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Improved mobile wallet button */
+.wallet-adapter-button {
+  font-size: 14px !important;
+  padding: 0.625rem 1rem !important;
+}
+
+@media (max-width: 640px) {
+  .wallet-adapter-button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  
+  .wallet-adapter-modal-wrapper {
+    width: 100% !important;
+    margin: 1rem !important;
+    border-radius: 1rem !important;
+  }
+}
