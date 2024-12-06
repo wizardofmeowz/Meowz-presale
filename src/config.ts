@@ -1,4 +1,4 @@
- import { PublicKey } from '@solana/web3.js';
+ import { PublicKey, clusterApiUrl } from '@solana/web3.js';
 import { vaultKeypair } from './utils/keys';
 
 // Get the current domain using Vercel's environment variables
@@ -36,9 +36,27 @@ const getAppIdentifier = (domain: string) => {
     : 'app.meowz-presale.token-sale';
 };
 
+// Secure RPC endpoints
+const SECURE_RPC_ENDPOINTS = [
+  'https://api.mainnet-beta.solana.com',
+  'https://solana-api.projectserum.com',
+  'https://rpc.ankr.com/solana'
+];
+
+// Get a secure RPC endpoint
+const getSecureRPCEndpoint = () => {
+  const configRPC = import.meta.env.VITE_RPC_ENDPOINT;
+  if (configRPC && configRPC.startsWith('https://')) {
+    return configRPC;
+  }
+  return SECURE_RPC_ENDPOINTS[0];
+};
+
 export const CONFIG = {
   // RPC Configuration
-  RPC_ENDPOINT: import.meta.env.VITE_RPC_ENDPOINT,
+  RPC_ENDPOINT: getSecureRPCEndpoint(),
+  NETWORK: 'mainnet-beta',
+  SECURE_RPC_LIST: SECURE_RPC_ENDPOINTS,
   VAULT_WALLET: vaultKeypair.publicKey,
 
   // Token Configuration
