@@ -1,4 +1,4 @@
- import { PublicKey, clusterApiUrl } from '@solana/web3.js';
+ import { PublicKey, clusterApiUrl, Cluster } from '@solana/web3.js';
 import { vaultKeypair } from './utils/keys';
 
 // Get the current domain using Vercel's environment variables
@@ -55,7 +55,7 @@ const getSecureRPCEndpoint = () => {
 export const CONFIG = {
   // RPC Configuration
   RPC_ENDPOINT: getSecureRPCEndpoint(),
-  NETWORK: 'mainnet-beta',
+  NETWORK: 'mainnet-beta' as Cluster,
   SECURE_RPC_LIST: SECURE_RPC_ENDPOINTS,
   VAULT_WALLET: vaultKeypair.publicKey,
 
@@ -72,10 +72,22 @@ export const CONFIG = {
   APP_NAME: 'The Wizard Of MEOWZ',
   APP_DESCRIPTION: 'Purchase $MEOWZ tokens instantly with SOL',
   APP_URL: getCurrentDomain(),
-  APP_ICON: 'https://meowz-presale.vercel.app/meowz-logo.png',
+  APP_ICON: 'https://raw.githubusercontent.com/wizardofmeowz/wizardofmeowz-token/main/meowzz.png',
   APP_IDENTIFIER: getAppIdentifier(getCurrentDomain()),
   APP_VERSION: '1.0.0',
-  APP_FAVICON: '/favicon.ico',
+  APP_FAVICON: '/meowz-logo.png',
+
+  // Security Configuration
+  SECURE_PROTOCOLS: ['https:'],
+  ALLOWED_NETWORKS: ['mainnet-beta'],
+  
+  // Verification details
+  VERIFICATION: {
+    VERIFIED: true,
+    VERIFICATION_AUTHORITY: 'The Wizard Of MEOWZ',
+    ...generatePlaceholderUrls(getCurrentDomain()),
+    SUPPORT_EMAIL: 'support@meowz-presale.vercel.app',
+  },
 
   // Developer Information
   DEVELOPER: {
@@ -83,18 +95,6 @@ export const CONFIG = {
     WEBSITE: 'https://meowz-presale.vercel.app',
     CONTACT: 'support@meowz-presale.vercel.app',
     VERIFIED: true
-  },
-
-  // Security Configuration
-  SECURE_PROTOCOLS: ['https:'],
-  ALLOWED_NETWORKS: ['mainnet-beta'],
-  
-  // Verification details (auto-generated based on domain)
-  VERIFICATION: {
-    VERIFIED: true,
-    VERIFICATION_AUTHORITY: 'The Wizard Of MEOWZ',
-    ...generatePlaceholderUrls(getCurrentDomain()),
-    SUPPORT_EMAIL: 'support@meowz-presale.vercel.app',
   },
 
   // Development Configuration
