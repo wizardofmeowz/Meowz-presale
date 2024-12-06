@@ -6,10 +6,23 @@ import { Toaster } from 'react-hot-toast';
 import { TokenSale } from './components/TokenSale';
 import { CONFIG } from './config';
 import { verifyVaultSetup } from './utils/token';
+import { clusterApiUrl, Cluster } from '@solana/web3.js';
 
 // Import wallet adapter styles
 import '@solana/wallet-adapter-react-ui/styles.css';
 import './App.css';
+
+// Constants for network and wallet configuration
+const network = (CONFIG.NETWORK || 'mainnet-beta') as Cluster;
+const endpoint = CONFIG.RPC_ENDPOINT || clusterApiUrl(network);
+
+// Wallet configuration
+const walletConfig = {
+  network,
+  walletName: CONFIG.APP_NAME,
+  icon: CONFIG.APP_ICON,
+  url: CONFIG.APP_URL,
+};
 
 function AppContent() {
   const { connection } = useConnection();
@@ -45,14 +58,17 @@ function AppContent() {
 export default function App() {
   const wallets = useMemo(
     () => [
-      new PhantomWalletAdapter(),
+      new PhantomWalletAdapter({
+        ...walletConfig,
+        name: CONFIG.APP_NAME,
+      }),
     ],
     []
   );
 
   return (
-    <ConnectionProvider endpoint={CONFIG.RPC_ENDPOINT}>
-      <WalletProvider wallets={wallets} autoConnect>
+    <ConnectionProvider endpoint={endpoint}>
+      <WalletProvider wallets={wallets} autoConnect={false}>
         <WalletModalProvider>
           <AppContent />
         </WalletModalProvider>
