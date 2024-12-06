@@ -12,23 +12,28 @@ const getCurrentDomain = () => {
     return `https://meowz-presale.vercel.app`;
   }
   
-  // Local development
-  return 'http://localhost:5173';
+  // Development environment - use HTTPS even for local
+  return 'https://localhost:5173';
 };
 
 // Generate placeholder URLs based on the current domain
 const generatePlaceholderUrls = (domain: string) => {
   const base = domain.endsWith('/') ? domain.slice(0, -1) : domain;
+  // Ensure URLs are HTTPS
+  const secureBase = base.replace(/^http:/, 'https:');
   return {
-    support: `${base}/support`,
-    privacy: `${base}/privacy`,
-    terms: `${base}/terms`,
+    support: `${secureBase}/support`,
+    privacy: `${secureBase}/privacy`,
+    terms: `${secureBase}/terms`,
   };
 };
 
 // Get app identifier based on domain
-const getAppIdentifier = (_domain: string) => {
-  return 'app.meowz-presale.token-sale';
+const getAppIdentifier = (domain: string) => {
+  // Ensure we're using a secure identifier
+  return domain.includes('localhost') 
+    ? 'app.meowz-presale.local-development'
+    : 'app.meowz-presale.token-sale';
 };
 
 export const CONFIG = {
@@ -48,9 +53,9 @@ export const CONFIG = {
   // App Configuration
   APP_NAME: 'The Wizard Of MEOWZ',
   APP_DESCRIPTION: 'Purchase $MEOWZ tokens instantly with SOL',
-  APP_URL: 'https://meowz-presale.vercel.app',
+  APP_URL: getCurrentDomain(),
   APP_ICON: 'https://meowz-presale.vercel.app/meowz-logo.png',
-  APP_IDENTIFIER: 'app.meowz-presale.token-sale',
+  APP_IDENTIFIER: getAppIdentifier(getCurrentDomain()),
   APP_VERSION: '1.0.0',
   APP_FAVICON: '/favicon.ico',
 
@@ -63,14 +68,14 @@ export const CONFIG = {
   },
 
   // Security Configuration
-  SECURE_PROTOCOLS: ['https:', 'http:'],
+  SECURE_PROTOCOLS: ['https:'],
   ALLOWED_NETWORKS: ['mainnet-beta'],
   
   // Verification details (auto-generated based on domain)
   VERIFICATION: {
     VERIFIED: true,
     VERIFICATION_AUTHORITY: 'The Wizard Of MEOWZ',
-    ...generatePlaceholderUrls('https://meowz-presale.vercel.app'),
+    ...generatePlaceholderUrls(getCurrentDomain()),
     SUPPORT_EMAIL: 'support@meowz-presale.vercel.app',
   },
 
