@@ -182,6 +182,16 @@ export const TokenSale: React.FC = () => {
 
   const handlePurchase = async (amount: string): Promise<void> => {
     if (!publicKey || !getActiveConnection()) return;
+    const numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount)) {
+      toast.error('Invalid amount');
+      return;
+    }
+
+    if (userSolBalance === null || userSolBalance < numericAmount * CONFIG.PRICE_PER_TOKEN) {
+      toast.error('Insufficient SOL balance for this purchase');
+      return;
+    }
 
     setIsProcessing(true);
     
@@ -308,15 +318,16 @@ export const TokenSale: React.FC = () => {
           }
         );
       }
-    } catch (error) {
-      console.error('Transaction error:', error);
+    } catch (error: any) {
+      console.error('Transaction failed:', error);
       toast.dismiss(processingToast);
-      toast.error(
-        <div className="bg-[#1a1b23] border border-gray-800 p-4 rounded-lg shadow-xl backdrop-blur-sm">
-          <p className="font-medium text-white">Transaction Failed</p>
-          <p className="text-sm text-red-400 mt-1">{handleTransactionError(error)}</p>
-        </div>
-      );
+      if (error.message.includes('insufficient funds')) {
+        toast.error('Insufficient funds for transaction');
+      } else if (error.message.includes('blockhash')) {
+        toast.error('Network error. Please try again');
+      } else {
+        toast.error(error.message || 'Failed to process transaction');
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -330,47 +341,85 @@ export const TokenSale: React.FC = () => {
     tokenAmount: number,
     solCost: number
   ): Promise<VersionedTransaction> => {
-    const instructions = [];
+    try {
+      console.log('Creating purchase transaction...', {
+        buyer: publicKey.toString(),
+        buyerATA: buyerATA.toString(),
+        vaultATA: vaultATA.toString(),
+        tokenAmount,
+        solCost
+      });
 
-    const buyerATAInfo = await connection.getAccountInfo(buyerATA);
-    if (!buyerATAInfo) {
+      const instructions = [];
+
+      // Check if buyer's token account exists
+      const buyerATAInfo = await connection.getAccountInfo(buyerATA);
+      if (!buyerATAInfo) {
+        console.log('Creating buyer token account...');
+        instructions.push(
+          createAssociatedTokenAccountInstruction(
+            publicKey,
+            buyerATA,
+            publicKey,
+            new PublicKey(CONFIG.TOKEN_MINT)
+          )
+        );
+      }
+
+      // Verify vault token account exists and has sufficient balance
+      try {
+        const vaultAccount = await getAccount(connection, vaultATA);
+        const vaultBalance = Number(vaultAccount.amount);
+        const requiredAmount = Math.floor(tokenAmount * (10 ** CONFIG.TOKEN_DECIMALS));
+        
+        if (vaultBalance < requiredAmount) {
+          throw new Error(`Insufficient token balance in vault. Required: ${requiredAmount}, Available: ${vaultBalance}`);
+        }
+        
+        console.log('Vault balance verified:', {
+          required: requiredAmount,
+          available: vaultBalance
+        });
+      } catch (error) {
+        console.error('Error checking vault balance:', error);
+        throw new Error('Failed to verify vault token balance');
+      }
+
+      // Add transfer instructions
       instructions.push(
-        createAssociatedTokenAccountInstruction(
-          publicKey,
+        SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: CONFIG.VAULT_WALLET,
+          lamports: Math.floor(solCost * LAMPORTS_PER_SOL),
+        }),
+        createTransferInstruction(
+          vaultATA,
           buyerATA,
-          publicKey,
-          new PublicKey(CONFIG.TOKEN_MINT)
+          CONFIG.VAULT_WALLET,
+          BigInt(Math.floor(tokenAmount * (10 ** CONFIG.TOKEN_DECIMALS))),
+          [vaultKeypair]
         )
       );
+
+      const latestBlockhash = await connection.getLatestBlockhash('confirmed');
+      
+      console.log('Creating transaction message...');
+      const messageV0 = new TransactionMessage({
+        payerKey: publicKey,
+        recentBlockhash: latestBlockhash.blockhash,
+        instructions,
+      }).compileToV0Message();
+
+      const transaction = new VersionedTransaction(messageV0);
+      
+      console.log('Signing transaction with vault keypair...');
+      transaction.sign([vaultKeypair]);
+
+      return transaction;
+    } catch (error) {
+      console.error('Error creating purchase transaction:', error);
+      throw error;
     }
-
-    instructions.push(
-      SystemProgram.transfer({
-        fromPubkey: publicKey,
-        toPubkey: CONFIG.VAULT_WALLET,
-        lamports: Math.floor(solCost * LAMPORTS_PER_SOL),
-      }),
-      createTransferInstruction(
-        vaultATA,
-        buyerATA,
-        CONFIG.VAULT_WALLET,
-        BigInt(Math.floor(tokenAmount * (10 ** CONFIG.TOKEN_DECIMALS))),
-        [vaultKeypair]
-      )
-    );
-
-    const latestBlockhash = await connection.getLatestBlockhash('confirmed');
-    
-    const messageV0 = new TransactionMessage({
-      payerKey: publicKey,
-      recentBlockhash: latestBlockhash.blockhash,
-      instructions,
-    }).compileToV0Message();
-
-    const transaction = new VersionedTransaction(messageV0);
-    transaction.sign([vaultKeypair]);
-
-    return transaction;
   };
 
   return (
@@ -386,12 +435,16 @@ export const TokenSale: React.FC = () => {
       )}
       
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-        <div className="text-center sm:text-left w-full sm:w-auto">
-          <h1 className="text-xl sm:text-2xl font-bold flex items-center justify-center sm:justify-start gap-3">
-            <img src="/meowz-logo.png" alt="MEOWZ Logo" className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-white/10" />
-            {CONFIG.TOKEN_NAME}
-          </h1>
-          <p className="text-sm text-gray-400">Purchase {CONFIG.TOKEN_SYMBOL} tokens instantly</p>
+        <div className="flex items-center gap-3 text-center sm:text-left w-full sm:w-auto">
+          <img 
+            src="./meowz-logo.png" 
+            alt="MEOWZ Logo" 
+            className="w-16 h-16" 
+          />
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold">{CONFIG.TOKEN_NAME}</h1>
+            <p className="text-sm text-gray-400">Purchase {CONFIG.TOKEN_SYMBOL} tokens instantly</p>
+          </div>
         </div>
         <WalletMultiButton className="!w-full sm:!w-auto" />
       </div>

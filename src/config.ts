@@ -9,7 +9,7 @@ const getCurrentDomain = () => {
   
   // Vercel deployment URL
   if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
+    return `https://meowz-presale.vercel.app`;
   }
   
   // Local development
@@ -28,8 +28,7 @@ const generatePlaceholderUrls = (domain: string) => {
 
 // Get app identifier based on domain
 const getAppIdentifier = (_domain: string) => {
-  const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-  return `com.${host.replace(/\./g, '-')}.presale`;
+  return 'app.meowz-presale.token-sale';
 };
 
 export const CONFIG = {
@@ -49,9 +48,19 @@ export const CONFIG = {
   // App Configuration
   APP_NAME: 'The Wizard Of MEOWZ',
   APP_DESCRIPTION: 'Purchase $MEOWZ tokens instantly with SOL',
-  APP_URL: getCurrentDomain(),
-  APP_ICON: '/meowz-logo.png',  // Updated to use root path
-  APP_IDENTIFIER: getAppIdentifier(getCurrentDomain()),
+  APP_URL: 'https://meowz-presale.vercel.app',
+  APP_ICON: 'https://meowz-presale.vercel.app/meowz-logo.png',
+  APP_IDENTIFIER: 'app.meowz-presale.token-sale',
+  APP_VERSION: '1.0.0',
+  APP_FAVICON: '/favicon.ico',
+
+  // Developer Information
+  DEVELOPER: {
+    NAME: 'The Wizard Of MEOWZ Team',
+    WEBSITE: 'https://meowz-presale.vercel.app',
+    CONTACT: 'support@meowz-presale.vercel.app',
+    VERIFIED: true
+  },
 
   // Security Configuration
   SECURE_PROTOCOLS: ['https:', 'http:'],
@@ -61,8 +70,8 @@ export const CONFIG = {
   VERIFICATION: {
     VERIFIED: true,
     VERIFICATION_AUTHORITY: 'The Wizard Of MEOWZ',
-    ...generatePlaceholderUrls(getCurrentDomain()),
-    SUPPORT_EMAIL: `support@${new URL(getCurrentDomain()).hostname}`,
+    ...generatePlaceholderUrls('https://meowz-presale.vercel.app'),
+    SUPPORT_EMAIL: 'support@meowz-presale.vercel.app',
   },
 
   // Development Configuration

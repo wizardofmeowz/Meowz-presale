@@ -119,3 +119,62 @@ export const initializeVaultAccount = async (connection: Connection): Promise<bo
     throw new Error(`Failed to initialize vault account: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
+
+// Verify vault setup and balance
+export const verifyVaultSetup = async (connection: Connection): Promise<{
+  isInitialized: boolean;
+  balance: number;
+  address: string;
+}> => {
+  try {
+    console.log('Verifying vault setup...');
+    
+    const tokenMint = new PublicKey(CONFIG.TOKEN_MINT);
+    const vaultATA = await getAssociatedTokenAddress(
+      tokenMint,
+      vaultKeypair.publicKey
+    );
+
+    console.log('Checking vault account:', {
+      vault: vaultKeypair.publicKey.toString(),
+      ata: vaultATA.toString(),
+      mint: tokenMint.toString()
+    });
+
+    try {
+      const account = await getAccount(connection, vaultATA);
+      const balance = Number(account.amount) / (10 ** CONFIG.TOKEN_DECIMALS);
+      
+      console.log('Vault account verified:', {
+        address: account.address.toString(),
+        balance: balance,
+        rawBalance: account.amount.toString()
+      });
+
+      return {
+        isInitialized: true,
+        balance,
+        address: vaultATA.toString()
+      };
+    } catch (error: any) {
+      if (error.name === 'TokenAccountNotFoundError') {
+        console.log('Vault token account not found, attempting to create...');
+        await initializeVaultAccount(connection);
+        
+        // Check again after initialization
+        const account = await getAccount(connection, vaultATA);
+        const balance = Number(account.amount) / (10 ** CONFIG.TOKEN_DECIMALS);
+        
+        return {
+          isInitialized: true,
+          balance,
+          address: vaultATA.toString()
+        };
+      }
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error verifying vault setup:', error);
+    throw new Error(`Failed to verify vault setup: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};

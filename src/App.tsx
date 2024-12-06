@@ -1,47 +1,62 @@
-import { useMemo } from 'react';
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
+import { useMemo, useEffect } from 'react';
+import { ConnectionProvider, WalletProvider, useConnection } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { Toaster } from 'react-hot-toast';
 import { TokenSale } from './components/TokenSale';
 import { CONFIG } from './config';
+import { verifyVaultSetup } from './utils/token';
 
 // Import wallet adapter styles
 import '@solana/wallet-adapter-react-ui/styles.css';
+import './App.css';
 
-function App() {
-  // Use the Meowz logo from public directory
+function AppContent() {
+  const { connection } = useConnection();
+
+  useEffect(() => {
+    const verifySetup = async () => {
+      if (!connection) return;
+      
+      try {
+        console.log('Verifying vault setup on app initialization...');
+        const vaultStatus = await verifyVaultSetup(connection);
+        console.log('Vault verification complete:', vaultStatus);
+        
+        if (vaultStatus.balance <= 0) {
+          console.warn('Warning: Vault has no token balance');
+        }
+      } catch (error) {
+        console.error('Failed to verify vault setup:', error);
+      }
+    };
+
+    verifySetup();
+  }, [connection]);
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <TokenSale />
+      <Toaster position="bottom-right" />
+    </div>
+  );
+}
+
+export default function App() {
   const wallets = useMemo(
     () => [
-      new PhantomWalletAdapter({
-        appIdentity: {
-          name: "The Wizard Of MEOWZ",
-          uri: window.location.origin,
-          icon: "https://raw.githubusercontent.com/solana-labs/wallet-adapter/master/packages/wallets/icons/solana.svg"
-        }
-      })
+      new PhantomWalletAdapter(),
     ],
     []
   );
 
   return (
-    <ConnectionProvider endpoint={CONFIG.RPC_ENDPOINT} config={{ 
-      commitment: 'confirmed',
-      confirmTransactionInitialTimeout: 60000,
-      wsEndpoint: CONFIG.RPC_ENDPOINT.replace('https', 'wss')
-    }}>
+    <ConnectionProvider endpoint={CONFIG.RPC_ENDPOINT}>
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
-          <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
-            <div className="container mx-auto px-4 py-8">
-              <TokenSale />
-              <Toaster position="bottom-right" />
-            </div>
-          </div>
+          <AppContent />
         </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
   );
 }
-
-export default App;
